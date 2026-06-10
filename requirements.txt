@@ -10,3 +10,4 @@ python-dotenv
 httpx
 jinja2
 pydantic-settings
+pydantic[email]
