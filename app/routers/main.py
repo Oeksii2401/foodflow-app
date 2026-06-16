@@ -20,11 +20,12 @@ router = APIRouter()
 async def home(request: Request):
     return HTMLResponse("""
     <h1 style="text-align:center; margin-top:100px; font-family:sans-serif; color:#2563eb;">
-        🚀 FoodFlow
+        FoodFlow
     </h1>
     <p style="text-align:center; font-size:18px;">
-        Меню кафе: <a href="/menu/1">/menu/1</a><br><br>
-        <a href="/docs">→ Swagger документация</a>
+        <a href="/menu/1">/menu/1</a> &nbsp;|&nbsp;
+        <a href="/admin/setup">/admin/setup</a> &nbsp;|&nbsp;
+        <a href="/docs">/docs</a>
     </p>
     """)
 
@@ -36,8 +37,7 @@ async def menu_page(cafe_id: int, request: Request, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Cafe not found")
     categories = db.query(MenuCategory).filter(MenuCategory.cafe_id == cafe_id).order_by(MenuCategory.sort_order).all()
     dishes = db.query(Dish).filter(Dish.cafe_id == cafe_id, Dish.is_available == True).order_by(Dish.sort_order).all()
-    return templates.TemplateResponse("client/menu.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="client/menu.html", context={
         "cafe": cafe,
         "categories": categories,
         "dishes": dishes,
@@ -47,16 +47,14 @@ async def menu_page(cafe_id: int, request: Request, db: Session = Depends(get_db
 
 @router.get("/cart", response_class=HTMLResponse)
 async def cart_page(request: Request):
-    return templates.TemplateResponse("client/cart.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="client/cart.html", context={
         "lang": request.query_params.get("lang", "de"),
     })
 
 
 @router.get("/checkout", response_class=HTMLResponse)
 async def checkout_page(request: Request):
-    return templates.TemplateResponse("client/checkout.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="client/checkout.html", context={
         "lang": request.query_params.get("lang", "de"),
     })
 
@@ -66,8 +64,7 @@ async def order_status_page(order_id: int, request: Request, db: Session = Depen
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    return templates.TemplateResponse("client/order_status.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="client/order_status.html", context={
         "order": order,
         "lang": request.query_params.get("lang", "de"),
     })
@@ -75,12 +72,12 @@ async def order_status_page(order_id: int, request: Request, db: Session = Depen
 
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
-    return templates.TemplateResponse("client/register.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="client/register.html")
 
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("client/login.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="client/login.html")
 
 
 @router.get("/me", tags=["auth"])
@@ -94,4 +91,4 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 
 @router.get("/admin/setup", response_class=HTMLResponse)
 async def setup_page(request: Request):
-    return templates.TemplateResponse("admin/setup.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="admin/setup.html")
