@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default('de') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FoodFlow{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Шапка -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+            <h1 class="text-xl font-bold text-blue-600">🍕 FoodFlow</h1>
+            <div class="flex items-center gap-3">
+                <!-- Выбор языка -->
+                <select onchange="switchLang(this.value)"
+                        class="text-sm border rounded px-2 py-1">
+                    <option value="de" {% if lang == 'de' %}selected{% endif %}>🇩🇪 DE</option>
+                    <option value="en" {% if lang == 'en' %}selected{% endif %}>🇬🇧 EN</option>
+                    <option value="ru" {% if lang == 'ru' %}selected{% endif %}>🇷🇺 RU</option>
+                    <option value="uk" {% if lang == 'uk' %}selected{% endif %}>🇺🇦 UK</option>
+                </select>
+                <!-- Корзина -->
+                <a href="/cart" class="relative">
+                    <span class="text-2xl">🛒</span>
+                    <span id="cart-count"
+                          class="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">
+                        0
+                    </span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Контент -->
+    <main class="max-w-2xl mx-auto px-4 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        function switchLang(lang) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('lang', lang);
+            window.location.href = url.toString();
+        }
+
+        // Корзина из localStorage
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const total = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const badge = document.getElementById('cart-count');
+            if (total > 0) {
+                badge.textContent = total;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+        updateCartCount();
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

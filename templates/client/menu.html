@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}{{ cafe.name }} — меню{% endblock %}
+
+{% block content %}
+
+<!-- Шапка кафе -->
+<div class="text-center mb-6">
+    {% if cafe.logo_url %}
+    <img src="{{ cafe.logo_url }}" class="w-20 h-20 rounded-full mx-auto mb-3 object-cover">
+    {% endif %}
+    <h2 class="text-2xl font-bold">{{ cafe.name }}</h2>
+    {% if cafe.description %}
+    <p class="text-gray-500 mt-1">{{ cafe.description }}</p>
+    {% endif %}
+</div>
+
+<!-- Категории (табы) -->
+{% if categories %}
+<div class="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+    <button onclick="filterCategory('all')"
+            class="category-btn active whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white">
+        Все
+    </button>
+    {% for cat in categories %}
+    <button onclick="filterCategory('{{ cat.id }}')"
+            class="category-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+        {{ cat.name }}
+    </button>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Список блюд -->
+<div id="dishes-list" class="grid gap-3">
+    {% for dish in dishes %}
+    {% if dish.is_available %}
+    <div class="dish-card bg-white rounded-xl shadow-sm p-4 flex gap-4 items-center"
+         data-category="{{ dish.category_id }}">
+
+        {% if dish.image_url %}
+        <img src="{{ dish.image_url }}"
+             class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
+        {% else %}
+        <div class="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-3xl">
+            🍽️
+        </div>
+        {% endif %}
+
+        <div class="flex-1 min-w-0">
+            <h3 class="font-semibold text-gray-900">{{ dish.name }}</h3>
+            {% if dish.description %}
+            <p class="text-sm text-gray-500 mt-0.5 line-clamp-2">{{ dish.description }}</p>
+            {% endif %}
+            <p class="text-blue-600 font-bold mt-1">{{ dish.price }} €</p>
+        </div>
+
+        <button onclick="addToCart({{ dish.id }}, '{{ dish.name }}', {{ dish.price }})"
+                class="flex-shrink-0 w-9 h-9 bg-blue-600 text-white rounded-full text-xl font-bold hover:bg-blue-700 transition">
+            +
+        </button>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Кнопка перейти в корзину (появляется когда есть товары) -->
+<div id="go-to-cart" class="hidden fixed bottom-6 left-0 right-0 flex justify-center z-40">
+    <a href="/cart?cafe_id={{ cafe.id }}"
+       class="bg-blue-600 text-white px-8 py-3 rounded-full shadow-lg font-semibold text-lg">
+        🛒 Перейти в корзину (<span id="cart-total">0</span> €)
+    </a>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const CAFE_ID = {{ cafe.id }};
+
+    function addToCart(dishId, dishName, dishPrice) {
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const existing = cart.find(i => i.id === dishId);
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            cart.push({ id: dishId, name: dishName, price: dishPrice, quantity: 1 });
+        }
+        localStorage.setItem('cart', JSON.stringify(cart));
+        localStorage.setItem('cafe_id', CAFE_ID);
+        updateCartCount();
+        updateCartBar();
+        showToast(dishName);
+    }
+
+    function updateCartBar() {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+        const count = cart.reduce((sum, i) => sum + i.quantity, 0);
+        const bar = document.getElementById('go-to-cart');
+        const totalEl = document.getElementById('cart-total');
+        if (count > 0) {
+            bar.classList.remove('hidden');
+            totalEl.textContent = total.toFixed(2);
+        } else {
+            bar.classList.add('hidden');
+        }
+    }
+
+    function filterCategory(catId) {
+        document.querySelectorAll('.dish-card').forEach(card => {
+            if (catId === 'all' || card.dataset.category == catId) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-100', 'text-gray-700');
+        });
+        event.target.classList.add('bg-blue-600', 'text-white');
+        event.target.classList.remove('bg-gray-100', 'text-gray-700');
+    }
+
+    function showToast(name) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow z-50 text-sm';
+        toast.textContent = '✓ ' + name + ' добавлено';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    updateCartBar();
+</script>
+{% endblock %}

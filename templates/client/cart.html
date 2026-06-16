@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Корзина — FoodFlow{% endblock %}
+
+{% block content %}
+
+<h2 class="text-2xl font-bold mb-4">🛒 Корзина</h2>
+
+<!-- Список товаров (рендерится JS) -->
+<div id="cart-items" class="grid gap-3 mb-6"></div>
+
+<!-- Пустая корзина -->
+<div id="cart-empty" class="hidden text-center py-12 text-gray-400">
+    <div class="text-5xl mb-3">🛒</div>
+    <p class="text-lg">Корзина пуста</p>
+    <a href="/" class="mt-4 inline-block text-blue-600 underline">← Вернуться в меню</a>
+</div>
+
+<!-- Итого -->
+<div id="cart-summary" class="hidden bg-white rounded-xl shadow-sm p-4 mb-4">
+    <div class="flex justify-between text-gray-600 mb-1">
+        <span>Товары</span>
+        <span id="subtotal">0 €</span>
+    </div>
+    <div class="flex justify-between text-gray-600 mb-3">
+        <span>Доставка</span>
+        <span>уточняется</span>
+    </div>
+    <div class="flex justify-between font-bold text-lg border-t pt-3">
+        <span>Итого</span>
+        <span id="total">0 €</span>
+    </div>
+</div>
+
+<!-- Кнопка оформить -->
+<div id="checkout-btn-wrap" class="hidden">
+    <a id="checkout-link" href="/checkout"
+       class="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-semibold text-lg">
+        Оформить заказ →
+    </a>
+    <button onclick="clearCart()"
+            class="block w-full text-center text-gray-400 text-sm mt-3 underline">
+        Очистить корзину
+    </button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function renderCart() {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const cafeId = localStorage.getItem('cafe_id');
+        const container = document.getElementById('cart-items');
+        const empty = document.getElementById('cart-empty');
+        const summary = document.getElementById('cart-summary');
+        const btnWrap = document.getElementById('checkout-btn-wrap');
+
+        container.innerHTML = '';
+
+        if (cart.length === 0) {
+            empty.classList.remove('hidden');
+            summary.classList.add('hidden');
+            btnWrap.classList.add('hidden');
+            return;
+        }
+
+        empty.classList.add('hidden');
+        summary.classList.remove('hidden');
+        btnWrap.classList.remove('hidden');
+
+        let subtotal = 0;
+
+        cart.forEach((item, index) => {
+            subtotal += item.price * item.quantity;
+            container.innerHTML += `
+                <div class="bg-white rounded-xl shadow-sm p-4 flex items-center gap-4">
+                    <div class="flex-1">
+                        <p class="font-semibold">${item.name}</p>
+                        <p class="text-blue-600 font-bold">${item.price} €</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changeQty(${index}, -1)"
+                                class="w-8 h-8 rounded-full bg-gray-100 font-bold text-lg">−</button>
+                        <span class="w-6 text-center font-semibold">${item.quantity}</span>
+                        <button onclick="changeQty(${index}, 1)"
+                                class="w-8 h-8 rounded-full bg-gray-100 font-bold text-lg">+</button>
+                    </div>
+                    <p class="w-16 text-right font-semibold">${(item.price * item.quantity).toFixed(2)} €</p>
+                </div>
+            `;
+        });
+
+        document.getElementById('subtotal').textContent = subtotal.toFixed(2) + ' €';
+        document.getElementById('total').textContent = subtotal.toFixed(2) + ' €';
+        document.getElementById('checkout-link').href = `/checkout?cafe_id=${cafeId}`;
+
+        updateCartCount();
+    }
+
+    function changeQty(index, delta) {
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        cart[index].quantity += delta;
+        if (cart[index].quantity <= 0) cart.splice(index, 1);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+    }
+
+    function clearCart() {
+        localStorage.removeItem('cart');
+        localStorage.removeItem('cafe_id');
+        renderCart();
+    }
+
+    renderCart();
+</script>
+{% endblock %}
