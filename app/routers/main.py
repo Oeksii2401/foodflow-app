@@ -18,13 +18,15 @@ router = APIRouter()
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("client/menu.html", {
-        "request": request,
-        "cafe": None,
-        "categories": [],
-        "dishes": [],
-        "lang": request.query_params.get("lang", "de"),
-    })
+    return HTMLResponse("""
+    <h1 style="text-align:center; margin-top:100px; font-family:sans-serif; color:#2563eb;">
+        🚀 FoodFlow
+    </h1>
+    <p style="text-align:center; font-size:18px;">
+        Меню кафе: <a href="/menu/1">/menu/1</a><br><br>
+        <a href="/docs">→ Swagger документация</a>
+    </p>
+    """)
 
 
 @router.get("/menu/{cafe_id}", response_class=HTMLResponse)
@@ -88,3 +90,8 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
         "full_name": current_user.full_name,
         "role": current_user.role,
     }
+
+
+@router.get("/admin/setup", response_class=HTMLResponse)
+async def setup_page(request: Request):
+    return templates.TemplateResponse("admin/setup.html", {"request": request})
