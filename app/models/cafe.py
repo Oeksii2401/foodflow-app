@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+# app/models/cafe.py  — ОБНОВЛЁННАЯ ВЕРСИЯ (заменить существующий файл)
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.models.base import Base
+
 
 class Cafe(Base):
     __tablename__ = "cafes"
@@ -12,5 +14,12 @@ class Cafe(Base):
     address = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     logo_url = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
 
-    # owner = relationship("User", back_populates="cafes")  # позже
+    # Связи
+    owner = relationship("User", back_populates="cafes")
+    categories = relationship("MenuCategory", back_populates="cafe")
+    dishes = relationship("Dish", back_populates="cafe")
+    orders = relationship("Order", back_populates="cafe")
+    delivery_zones = relationship("DeliveryZone", back_populates="cafe")
+    stripe_account = relationship("StripeAccount", back_populates="cafe", uselist=False)
