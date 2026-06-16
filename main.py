@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import get_settings
 from app.routers.main import router as main_router
 from app.routers.user import router as user_router   # ← добавь
+from app.routers.cafe import router as cafe_router   # ← добавь
 
 settings = get_settings()
 
@@ -18,7 +19,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Роутеры
 app.include_router(main_router)
 app.include_router(user_router)   # ← добавь
-
+app.include_router(cafe_router)   # ← добавь
 @app.get("/health")
 async def health():
     return {"status": "healthy", "environment": settings.ENVIRONMENT}
