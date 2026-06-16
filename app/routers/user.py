@@ -7,6 +7,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserRead
 from app.schemas.token import Token
 from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.deps import get_current_active_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -41,3 +42,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     
     access_token = create_access_token(subject=user.email)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.get("/me", response_model=UserRead)
+def read_users_me(current_user: User = Depends(get_current_active_user)):
+    return current_user
