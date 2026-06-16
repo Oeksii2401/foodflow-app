@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация - FoodFlow</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; }
+        button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <h1>Регистрация в FoodFlow</h1>
+    
+    <form hx-post="/users/" hx-swap="innerHTML">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="text" name="full_name" placeholder="Полное имя">
+        <input type="password" name="password" placeholder="Пароль" required>
+        <select name="role">
+            <option value="client">Клиент</option>
+            <option value="cafe_owner">Владелец кафе</option>
+        </select>
+        <button type="submit">Зарегистрироваться</button>
+    </form>
+
+    <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+</body>
+</html>

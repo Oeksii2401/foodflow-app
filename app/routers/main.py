@@ -3,7 +3,10 @@ from fastapi.responses import HTMLResponse
 
 from app.core.deps import get_current_user
 from app.models.user import User
+from fastapi.templating import Jinja2Templates
+from fastapi.requests import Request
 
+templates = Jinja2Templates(directory="templates")
 router = APIRouter()
 
 @router.get("/", response_class=HTMLResponse)
@@ -26,3 +29,11 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
         "role": current_user.role,
         "message": "Авторизация работает!"
     }
+
+@router.get("/register", response_class=HTMLResponse)
+async def register_page(request: Request):
+    return templates.TemplateResponse("client/register.html", {"request": request})
+
+@router.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse("client/login.html", {"request": request})
