@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     # Google Maps
     GOOGLE_MAPS_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
 
     # Cloudinary
     CLOUDINARY_CLOUD_NAME: str = ""

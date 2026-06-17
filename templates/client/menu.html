@@ -4,7 +4,6 @@
 
 {% block content %}
 
-<!-- Шапка кафе -->
 <div class="text-center mb-6">
     {% if cafe.logo_url %}
     <img src="{{ cafe.logo_url }}" class="w-20 h-20 rounded-full mx-auto mb-3 object-cover">
@@ -15,7 +14,6 @@
     {% endif %}
 </div>
 
-<!-- Категории (табы) -->
 {% if categories %}
 <div class="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
     <button onclick="filterCategory('all')"
@@ -31,16 +29,15 @@
 </div>
 {% endif %}
 
-<!-- Список блюд -->
 <div id="dishes-list" class="grid gap-3">
     {% for dish in dishes %}
     {% if dish.is_available %}
     <div class="dish-card bg-white rounded-xl shadow-sm p-4 flex gap-4 items-center"
-         data-category="{{ dish.category_id }}">
+         data-category="{{ dish.category_id }}"
+         data-dish-id="{{ dish.id }}">
 
         {% if dish.image_url %}
-        <img src="{{ dish.image_url }}"
-             class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
+        <img src="{{ dish.image_url }}" class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
         {% else %}
         <div class="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-3xl">
             🍽️
@@ -52,7 +49,12 @@
             {% if dish.description %}
             <p class="text-sm text-gray-500 mt-0.5 line-clamp-2">{{ dish.description }}</p>
             {% endif %}
-            <p class="text-blue-600 font-bold mt-1">{{ dish.price }} €</p>
+            <div class="flex items-center gap-2 mt-1">
+                <p class="text-blue-600 font-bold">{{ dish.price }} €</p>
+                {% if dish.calories %}<span class="text-xs text-gray-400">{{ dish.calories }} ккал</span>{% endif %}
+                {% if dish.is_vegan %}<span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">🌱 веган</span>{% endif %}
+                {% if dish.is_vegetarian and not dish.is_vegan %}<span class="text-xs bg-green-50 text-green-600 px-1.5 py-0.5 rounded">🥗 вег</span>{% endif %}
+            </div>
         </div>
 
         <button onclick="addToCart({{ dish.id }}, '{{ dish.name }}', {{ dish.price }})"
@@ -64,7 +66,6 @@
     {% endfor %}
 </div>
 
-<!-- Кнопка перейти в корзину (появляется когда есть товары) -->
 <div id="go-to-cart" class="hidden fixed bottom-6 left-0 right-0 flex justify-center z-40">
     <a href="/cart?cafe_id={{ cafe.id }}"
        class="bg-blue-600 text-white px-8 py-3 rounded-full shadow-lg font-semibold text-lg">
@@ -77,6 +78,8 @@
 {% block scripts %}
 <script>
     const CAFE_ID = {{ cafe.id }};
+    const CAFE_ID_CHAT = {{ cafe.id }};
+    let chatHistory = [];
 
     function addToCart(dishId, dishName, dishPrice) {
         let cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -132,5 +135,110 @@
     }
 
     updateCartBar();
+
+    // AI чат
+    document.body.insertAdjacentHTML('beforeend', `
+        <button onclick="toggleChat()"
+                id="chat-btn"
+                class="fixed bottom-24 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg text-2xl z-50 flex items-center justify-center">
+            🤖
+        </button>
+        <div id="chat-widget" class="hidden fixed bottom-40 right-6 w-80 bg-white rounded-2xl shadow-xl z-50 flex flex-col" style="height:420px">
+            <div class="bg-blue-600 text-white px-4 py-3 rounded-t-2xl flex justify-between items-center">
+                <span class="font-semibold">🤖 AI-ассистент</span>
+                <button onclick="toggleChat()" class="text-white text-xl leading-none">×</button>
+            </div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+            <div id="suggested-dishes-bar" class="hidden px-3 pb-2 flex gap-2 overflow-x-auto"></div>
+            <div class="p-3 border-t flex gap-2">
+                <input id="chat-input" type="text" placeholder="Напишите что хотите..."
+                       class="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       onkeydown="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()"
+                        class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium">→</button>
+            </div>
+        </div>
+    `);
+
+    function toggleChat() {
+        const widget = document.getElementById('chat-widget');
+        widget.classList.toggle('hidden');
+        if (!widget.classList.contains('hidden') && chatHistory.length === 0) {
+            addMessage('assistant', 'Привет! Я помогу выбрать блюдо 😊 Что вы хотите?');
+        }
+    }
+
+    function addMessage(role, text) {
+        const container = document.getElementById('chat-messages');
+        const isUser = role === 'user';
+        container.insertAdjacentHTML('beforeend', `
+            <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+                <div class="max-w-xs px-3 py-2 rounded-xl text-sm ${isUser ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}">
+                    ${text}
+                </div>
+            </div>
+        `);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function showSuggestedDishes(dishIds) {
+        const bar = document.getElementById('suggested-dishes-bar');
+        if (!dishIds || dishIds.length === 0) { bar.classList.add('hidden'); return; }
+        bar.innerHTML = '';
+        bar.classList.remove('hidden');
+        dishIds.forEach(id => {
+            const card = document.querySelector(`.dish-card[data-dish-id="${id}"]`);
+            if (card) {
+                const name = card.querySelector('h3')?.textContent || 'Блюдо';
+                const price = card.querySelector('.text-blue-600')?.textContent || '';
+                bar.insertAdjacentHTML('beforeend', `
+                    <button onclick="addToCartFromAI(${id})"
+                            class="whitespace-nowrap bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-medium flex-shrink-0">
+                        + ${name} ${price}
+                    </button>
+                `);
+            }
+        });
+    }
+
+    function addToCartFromAI(dishId) {
+        const card = document.querySelector(`.dish-card[data-dish-id="${dishId}"]`);
+        if (card) {
+            const btn = card.querySelector('button');
+            if (btn) btn.click();
+            addMessage('assistant', '✅ Добавлено в корзину!');
+        }
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        addMessage('user', text);
+        chatHistory.push({ role: 'user', content: text });
+        addMessage('assistant', '...');
+        try {
+            const res = await fetch('/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cafe_id: CAFE_ID_CHAT,
+                    message: text,
+                    history: chatHistory.slice(-6)
+                })
+            });
+            const data = await res.json();
+            document.getElementById('chat-messages').lastElementChild.remove();
+            addMessage('assistant', data.message);
+            chatHistory.push({ role: 'assistant', content: data.message });
+            if (data.suggested_dishes && data.suggested_dishes.length > 0) {
+                showSuggestedDishes(data.suggested_dishes);
+            }
+        } catch (e) {
+            document.getElementById('chat-messages').lastElementChild.remove();
+            addMessage('assistant', 'Ошибка соединения 😔');
+        }
+    }
 </script>
 {% endblock %}
