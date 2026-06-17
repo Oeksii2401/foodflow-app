@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Панель кафе — {{ cafe.name }}{% endblock %}
+
+{% block content %}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h2 class="text-2xl font-bold">{{ cafe.name }}</h2>
+        <p class="text-gray-500 text-sm">Панель управления заказами</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <span id="ws-status" class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">⚫ Подключение...</span>
+    </div>
+</div>
+
+<!-- Фильтры по статусу -->
+<div class="flex gap-2 overflow-x-auto pb-2 mb-4">
+    <button onclick="filterOrders('all')" class="filter-btn active whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium bg-blue-600 text-white">Все</button>
+    <button onclick="filterOrders('pending')" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700">⏳ Новые</button>
+    <button onclick="filterOrders('paid')" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700">✅ Оплачены</button>
+    <button onclick="filterOrders('preparing')" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700">👨‍🍳 Готовятся</button>
+    <button onclick="filterOrders('ready')" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700">🎉 Готовы</button>
+    <button onclick="filterOrders('delivering')" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700">🚴 В пути</button>
+</div>
+
+<!-- Список заказов -->
+<div id="orders-list" class="grid gap-3">
+    {% for order in orders %}
+    <div class="order-card bg-white rounded-xl shadow-sm p-4" data-status="{{ order.status }}" data-order-id="{{ order.id }}">
+        <div class="flex items-start justify-between mb-3">
+            <div>
+                <span class="font-bold text-lg">#{{ order.id }}</span>
+                <span class="text-gray-500 text-sm ml-2">{{ order.created_at.strftime('%H:%M') }}</span>
+                <span class="ml-2 text-sm font-medium">{{ order.customer_name }}</span>
+            </div>
+            <span class="status-badge text-xs px-2 py-1 rounded-full font-medium
+                {% if order.status == 'pending' %}bg-yellow-100 text-yellow-700
+                {% elif order.status == 'paid' %}bg-green-100 text-green-700
+                {% elif order.status == 'preparing' %}bg-blue-100 text-blue-700
+                {% elif order.status == 'ready' %}bg-purple-100 text-purple-700
+                {% elif order.status == 'delivering' %}bg-orange-100 text-orange-700
+                {% elif order.status == 'delivered' %}bg-gray-100 text-gray-500
+                {% elif order.status == 'cancelled' %}bg-red-100 text-red-500
+                {% endif %}">
+                {% if order.status == 'pending' %}⏳ Новый
+                {% elif order.status == 'paid' %}✅ Оплачен
+                {% elif order.status == 'preparing' %}👨‍🍳 Готовится
+                {% elif order.status == 'ready' %}🎉 Готов
+                {% elif order.status == 'delivering' %}🚴 В пути
+                {% elif order.status == 'delivered' %}📦 Доставлен
+                {% elif order.status == 'cancelled' %}❌ Отменён
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- Состав -->
+        <div class="text-sm text-gray-600 mb-3">
+            {% for item in order.items %}
+            <span>{{ item.dish_name }} × {{ item.quantity }}</span>{% if not loop.last %}, {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Адрес и сумма -->
+        <div class="flex items-center justify-between text-sm">
+            <span class="text-gray-500">
+                {% if order.delivery_address %}🚴 {{ order.delivery_address }}{% else %}🏠 Самовывоз{% endif %}
+            </span>
+            <span class="font-bold text-blue-600">{{ "%.2f"|format(order.total) }} €</span>
+        </div>
+
+        {% if order.comment %}
+        <div class="mt-2 text-sm text-orange-600 bg-orange-50 rounded-lg px-3 py-1">
+            💬 {{ order.comment }}
+        </div>
+        {% endif %}
+
+        <!-- Кнопки смены статуса -->
+        <div class="flex gap-2 mt-3 flex-wrap">
+            {% if order.status == 'paid' %}
+            <button onclick="updateStatus({{ order.id }}, 'preparing')"
+                    class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium">
+                👨‍🍳 Начать готовить
+            </button>
+            {% elif order.status == 'preparing' %}
+            <button onclick="updateStatus({{ order.id }}, 'ready')"
+                    class="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm font-medium">
+                🎉 Готово
+            </button>
+            {% elif order.status == 'ready' %}
+            <button onclick="updateStatus({{ order.id }}, 'delivering')"
+                    class="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-sm font-medium">
+                🚴 Передать курьеру
+            </button>
+            {% elif order.status == 'delivering' %}
+            <button onclick="updateStatus({{ order.id }}, 'delivered')"
+                    class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium">
+                ✅ Доставлен
+            </button>
+            {% endif %}
+            {% if order.status not in ['delivered', 'cancelled'] %}
+            <button onclick="updateStatus({{ order.id }}, 'cancelled')"
+                    class="px-3 py-1.5 bg-red-100 text-red-600 rounded-lg text-sm font-medium">
+                ❌ Отменить
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-12 text-gray-400">
+        <div class="text-5xl mb-3">📋</div>
+        <p>Заказов пока нет</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const CAFE_ID = {{ cafe.id }};
+    const TOKEN = localStorage.getItem('admin_token') || '';
+
+    // WebSocket
+    const wsUrl = location.origin.replace('https', 'wss').replace('http', 'ws') + `/cafe/ws/${CAFE_ID}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+        document.getElementById('ws-status').textContent = '🟢 Online';
+        document.getElementById('ws-status').className = 'text-xs px-2 py-1 rounded-full bg-green-100 text-green-700';
+    };
+
+    ws.onclose = () => {
+        document.getElementById('ws-status').textContent = '🔴 Offline';
+        document.getElementById('ws-status').className = 'text-xs px-2 py-1 rounded-full bg-red-100 text-red-600';
+    };
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'status_update') {
+            // Перезагружаем страницу чтобы обновить карточку
+            location.reload();
+        }
+        if (data.type === 'new_order') {
+            location.reload();
+        }
+    };
+
+    async function updateStatus(orderId, status) {
+        const res = await fetch(`/cafe/orders/${orderId}/status?status=${status}`, {
+            method: 'PATCH',
+            headers: { 'Authorization': 'Bearer ' + TOKEN }
+        });
+        if (res.ok) {
+            location.reload();
+        } else {
+            alert('Ошибка обновления статуса');
+        }
+    }
+
+    function filterOrders(status) {
+        document.querySelectorAll('.order-card').forEach(card => {
+            if (status === 'all' || card.dataset.status === status) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-100', 'text-gray-700');
+        });
+        event.target.classList.add('bg-blue-600', 'text-white');
+        event.target.classList.remove('bg-gray-100', 'text-gray-700');
+    }
+
+    // Автообновление каждые 30 сек
+    setTimeout(() => location.reload(), 30000);
+</script>
+{% endblock %}
