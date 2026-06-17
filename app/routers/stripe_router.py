@@ -46,8 +46,8 @@ def start_onboarding(
     # Создаём ссылку для onboarding
     account_link = stripe.AccountLink.create(
         account=stripe_acc.stripe_account_id,
-        refresh_url=f"http://localhost:8000/stripe/onboarding/{cafe_id}/refresh",
-        return_url=f"http://localhost:8000/stripe/onboarding/{cafe_id}/complete",
+        refresh_url=f"https://stunning-dollop-4jqjqxx6qr5wh969-8000.app.github.dev/stripe/onboarding/{cafe_id}/refresh",
+        return_url=f"https://stunning-dollop-4jqjqxx6qr5wh969-8000.app.github.dev/stripe/onboarding/{cafe_id}/complete",
         type="account_onboarding",
     )
 
@@ -113,8 +113,8 @@ def create_checkout(
             "quantity": 1,
         }],
         mode="payment",
-        success_url=f"http://localhost:8000/order/{order.id}?paid=true",
-        cancel_url=f"http://localhost:8000/order/{order.id}?cancelled=true",
+        success_url=f"https://stunning-dollop-4jqjqxx6qr5wh969-8000.app.github.dev/order/{order.id}?paid=true",
+        cancel_url=f"https://stunning-dollop-4jqjqxx6qr5wh969-8000.app.github.dev/order/{order.id}?cancelled=true",
         payment_intent_data={
             "application_fee_amount": platform_fee,
             "transfer_data": {"destination": stripe_acc.stripe_account_id},
