@@ -8,6 +8,7 @@ from app.routers.menu_category import router as menu_category_router
 from app.routers.dish import router as dish_router
 from app.routers.delivery_zone import router as delivery_zone_router
 from app.routers.order import router as order_router
+from app.routers.stripe_router import router as stripe_router
 
 settings = get_settings()
 
@@ -27,6 +28,7 @@ app.include_router(menu_category_router)
 app.include_router(dish_router)
 app.include_router(delivery_zone_router)
 app.include_router(order_router)
+app.include_router(stripe_router)
 
 @app.get("/health")
 async def health():
