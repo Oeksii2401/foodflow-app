@@ -11,6 +11,7 @@ from app.models.cafe import Cafe
 from app.models.menu_category import MenuCategory
 from app.models.dish import Dish
 from app.models.order import Order
+from app.core.translations import get_translations
 
 templates = Jinja2Templates(directory="templates")
 router = APIRouter()
@@ -35,27 +36,33 @@ async def menu_page(cafe_id: int, request: Request, db: Session = Depends(get_db
     cafe = db.query(Cafe).filter(Cafe.id == cafe_id, Cafe.is_active == True).first()
     if not cafe:
         raise HTTPException(status_code=404, detail="Cafe not found")
+    lang = request.query_params.get("lang", "de")
     categories = db.query(MenuCategory).filter(MenuCategory.cafe_id == cafe_id).order_by(MenuCategory.sort_order).all()
     dishes = db.query(Dish).filter(Dish.cafe_id == cafe_id, Dish.is_available == True).order_by(Dish.sort_order).all()
     return templates.TemplateResponse(request=request, name="client/menu.html", context={
         "cafe": cafe,
         "categories": categories,
         "dishes": dishes,
-        "lang": request.query_params.get("lang", "de"),
+        "lang": lang,
+        "t": get_translations(lang),
     })
 
 
 @router.get("/cart", response_class=HTMLResponse)
 async def cart_page(request: Request):
+    lang = request.query_params.get("lang", "de")
     return templates.TemplateResponse(request=request, name="client/cart.html", context={
-        "lang": request.query_params.get("lang", "de"),
+        "lang": lang,
+        "t": get_translations(lang),
     })
 
 
 @router.get("/checkout", response_class=HTMLResponse)
 async def checkout_page(request: Request):
+    lang = request.query_params.get("lang", "de")
     return templates.TemplateResponse(request=request, name="client/checkout.html", context={
-        "lang": request.query_params.get("lang", "de"),
+        "lang": lang,
+        "t": get_translations(lang),
     })
 
 
@@ -64,9 +71,11 @@ async def order_status_page(order_id: int, request: Request, db: Session = Depen
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    lang = request.query_params.get("lang", order.language or "de")
     return templates.TemplateResponse(request=request, name="client/order_status.html", context={
         "order": order,
-        "lang": request.query_params.get("lang", "de"),
+        "lang": lang,
+        "t": get_translations(lang),
     })
 
 

@@ -18,7 +18,7 @@
 <div class="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
     <button onclick="filterCategory('all')"
             class="category-btn active whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white">
-        Все
+        {{ t.all_categories }}
     </button>
     {% for cat in categories %}
     <button onclick="filterCategory('{{ cat.id }}')"
@@ -67,9 +67,9 @@
 </div>
 
 <div id="go-to-cart" class="hidden fixed bottom-6 left-0 right-0 flex justify-center z-40">
-    <a href="/cart?cafe_id={{ cafe.id }}"
+    <a href="/cart?cafe_id={{ cafe.id }}&lang={{ lang }}"
        class="bg-blue-600 text-white px-8 py-3 rounded-full shadow-lg font-semibold text-lg">
-        🛒 Перейти в корзину (<span id="cart-total">0</span> €)
+        {{ t.go_to_cart }} (<span id="cart-total">0</span> €)
     </a>
 </div>
 
@@ -90,7 +90,8 @@
             cart.push({ id: dishId, name: dishName, price: dishPrice, quantity: 1 });
         }
         localStorage.setItem('cart', JSON.stringify(cart));
-        localStorage.setItem('cafe_id', CAFE_ID);
+        localStorage.setItem("cafe_id", CAFE_ID);
+        localStorage.setItem("lang", "{{ lang }}");
         updateCartCount();
         updateCartBar();
         showToast(dishName);
