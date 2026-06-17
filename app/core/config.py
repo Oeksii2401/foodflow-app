@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
 
     # Google Maps
     GOOGLE_MAPS_API_KEY: str = ""
