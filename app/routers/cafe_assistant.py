@@ -266,3 +266,31 @@ If no ingredients mentioned, omit calories/protein/fat/carbs fields."""
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class PhotoAnalyzeRequest(BaseModel):
+    cafe_id: int
+    image_base64: str
+    lang: Optional[str] = "ru"
+
+@router.post("/analyze-photo")
+async def analyze_photo(req: PhotoAnalyzeRequest, db: Session = Depends(get_db)):
+    prompts = {
+        "ru": "Ты эксперт по фуд-фотографии для ресторанов. Оцени это фото блюда по шкале 1-10 и дай конкретные советы по улучшению. Структура ответа: 1) Оценка X/10 2) Что хорошо 3) Что улучшить 4) Конкретные советы по пересъёмке. Отвечай на русском.",
+        "de": "Du bist ein Food-Fotografie-Experte für Restaurants. Bewerte dieses Gericht-Foto auf einer Skala von 1-10 und gib konkrete Verbesserungstipps. Antworte auf Deutsch.",
+        "en": "You are a food photography expert for restaurants. Rate this dish photo on a scale of 1-10 and give specific improvement tips. Reply in English.",
+        "uk": "Ти експерт з фуд-фотографії для ресторанів. Оціни це фото страви за шкалою 1-10 і дай конкретні поради щодо покращення. Відповідай українською.",
+    }
+    prompt = prompts.get(req.lang, prompts["ru"])
+    try:
+        response = get_groq_client().chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            messages=[{"role": "user", "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{req.image_base64}"}}
+            ]}],
+            max_tokens=1024,
+        )
+        return {"message": response.choices[0].message.content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
