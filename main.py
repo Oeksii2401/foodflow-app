@@ -11,6 +11,7 @@ from app.routers.order import router as order_router
 from app.routers.stripe_router import router as stripe_router
 from app.routers.cafe_dashboard import router as cafe_dashboard_router
 from app.routers.ai_chat import router as ai_chat_router
+from app.routers import cafe_assistant
 
 settings = get_settings()
 
@@ -31,6 +32,7 @@ app.include_router(dish_router)
 app.include_router(delivery_zone_router)
 app.include_router(order_router)
 app.include_router(stripe_router)
+app.include_router(cafe_assistant.router)
 app.include_router(cafe_dashboard_router)
 app.include_router(ai_chat_router)
 

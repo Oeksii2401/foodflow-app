@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{{ t.title }} — {{ cafe.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width:860px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;height:calc(100vh - 80px)">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <a href="/cafe/dashboard/{{ cafe.id }}" style="color:var(--color-text-secondary);text-decoration:none;font-size:14px">{{ t.back }}</a>
+    <div style="flex:1"></div>
+    <!-- Language switcher -->
+    <div style="display:flex;gap:4px">
+      {% for code in ['de','en','ru','uk'] %}
+      <a href="/cafe/ai/page/{{ cafe.id }}?lang={{ code }}"
+         style="padding:4px 10px;border-radius:20px;font-size:12px;text-decoration:none;border:0.5px solid var(--color-border-primary);
+                {% if lang == code %}background:#e6f1fb;color:#185fa5;border-color:#185fa5;{% else %}color:var(--color-text-secondary);{% endif %}">
+        {{ code.upper() }}
+      </a>
+      {% endfor %}
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite"></div>
+      <span style="font-size:12px;color:var(--color-text-secondary)">{{ t.online }}</span>
+    </div>
+  </div>
+
+  <div style="margin-bottom:14px">
+    <h1 style="font-size:20px;font-weight:500;margin:0">{{ t.title }}</h1>
+    <p style="font-size:13px;color:var(--color-text-secondary);margin:4px 0 0">{{ cafe.name }} · {{ t.subtitle }}</p>
+  </div>
+
+  <!-- Quick actions -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px" id="quick-actions">
+    <button onclick="sendQuick('{{ t.quick_stripe }}')" class="quick-btn">{{ t.btn_stripe }}</button>
+    <button onclick="sendQuick('{{ t.quick_dish }}')" class="quick-btn">{{ t.btn_dish }}</button>
+    <button onclick="sendQuick('{{ t.quick_calories }}')" class="quick-btn">{{ t.btn_calories }}</button>
+    <button onclick="sendQuick('{{ t.quick_delivery }}')" class="quick-btn">{{ t.btn_delivery }}</button>
+    <button onclick="sendQuick('{{ t.quick_photo }}')" class="quick-btn">{{ t.btn_photo }}</button>
+    <button onclick="sendQuick('{{ t.quick_pricing }}')" class="quick-btn">{{ t.btn_pricing }}</button>
+  </div>
+
+  <!-- Chat -->
+  <div id="chat-messages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:4px 0;margin-bottom:14px">
+    <div class="msg-assistant">
+      <div class="msg-bubble-assistant">{{ t.greeting | replace('{cafe_name}', cafe.name) | safe }}</div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div style="display:flex;gap:8px;align-items:flex-end">
+    <textarea id="chat-input" placeholder="{{ t.placeholder }}" rows="2"
+      style="flex:1;padding:10px 14px;border:0.5px solid var(--color-border-primary);border-radius:12px;font-size:14px;font-family:inherit;resize:none;background:var(--color-background-secondary);color:var(--color-text-primary);outline:none"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+    <button onclick="sendMessage()" id="send-btn"
+      style="padding:10px 20px;background:#534ab7;color:#fff;border:none;border-radius:12px;font-size:14px;cursor:pointer;height:44px;white-space:nowrap">
+      {{ t.send }}
+    </button>
+  </div>
+</div>
+
+<style>
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes blink{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
+.quick-btn{padding:6px 12px;font-size:12px;border:0.5px solid var(--color-border-primary);border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-primary);cursor:pointer;white-space:nowrap;transition:background .15s}
+.quick-btn:hover{background:var(--color-background-primary)}
+.msg-assistant{display:flex;justify-content:flex-start}
+.msg-user{display:flex;justify-content:flex-end}
+.msg-bubble-assistant{max-width:78%;padding:12px 16px;border-radius:16px 16px 16px 4px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);font-size:14px;line-height:1.65;color:var(--color-text-primary);white-space:pre-wrap}
+.msg-bubble-user{max-width:78%;padding:12px 16px;border-radius:16px 16px 4px 16px;background:#534ab7;color:#fff;font-size:14px;line-height:1.65;white-space:pre-wrap}
+.typing::after{content:'.';animation:blink 1.2s steps(3,end) infinite}
+</style>
+
+<script>
+const CAFE_ID = {{ cafe.id }};
+const LANG = "{{ lang }}";
+const ERROR_MSG = "{{ t.error }}";
+let history = [];
+
+function addMessage(role, html) {
+  const wrap = document.createElement('div');
+  wrap.className = role === 'user' ? 'msg-user' : 'msg-assistant';
+  const bubble = document.createElement('div');
+  bubble.className = role === 'user' ? 'msg-bubble-user' : 'msg-bubble-assistant';
+  bubble.innerHTML = html.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  wrap.appendChild(bubble);
+  document.getElementById('chat-messages').appendChild(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'end'});
+  return bubble;
+}
+
+function addTyping() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-assistant';
+  wrap.id = 'typing';
+  const b = document.createElement('div');
+  b.className = 'msg-bubble-assistant typing';
+  b.textContent = '';
+  wrap.appendChild(b);
+  document.getElementById('chat-messages').appendChild(wrap);
+  wrap.scrollIntoView({behavior:'smooth',block:'end'});
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('quick-actions').style.display = 'none';
+  addMessage('user', text);
+  history.push({role:'user', content:text});
+  addTyping();
+  document.getElementById('send-btn').disabled = true;
+  try {
+    const res = await fetch('/cafe/ai/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cafe_id:CAFE_ID, message:text, history:history.slice(-8), lang:LANG})
+    });
+    const data = await res.json();
+    document.getElementById('typing')?.remove();
+    const reply = data.message || ERROR_MSG;
+    addMessage('assistant', reply);
+    history.push({role:'assistant', content:reply});
+  } catch(e) {
+    document.getElementById('typing')?.remove();
+    addMessage('assistant', ERROR_MSG);
+  }
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-input').focus();
+}
+
+function sendQuick(text) {
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+</script>
+{% endblock %}
