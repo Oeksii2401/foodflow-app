@@ -199,3 +199,70 @@ async def assistant_page(cafe_id: int, request: Request, db: Session = Depends(g
         name="cafe/assistant.html",
         context={"cafe": cafe, "t": t, "lang": lang}
     )
+
+
+class DishGenerateRequest(BaseModel):
+    cafe_id: int
+    dish_input: str  # название или состав блюда
+    lang: Optional[str] = "ru"
+
+@router.post("/generate-dish")
+async def generate_dish(req: DishGenerateRequest, db: Session = Depends(get_db)):
+    cafe = db.query(Cafe).filter(Cafe.id == req.cafe_id).first()
+    if not cafe:
+        raise HTTPException(status_code=404, detail="Cafe not found")
+
+    prompt = f"""You are a professional menu copywriter for restaurants in Germany.
+
+The cafe owner provided this dish input: "{req.dish_input}"
+
+Generate exactly 3 name+description variants for this dish.
+Also provide translations into DE, EN, RU, UK for the best variant (variant 1).
+Also calculate approximate calories and macros if ingredients are mentioned.
+
+Respond ONLY with valid JSON, no markdown, no explanation:
+{{
+  "variants": [
+    {{
+      "name": "dish name",
+      "description": "appetizing description 1-2 sentences"
+    }},
+    {{
+      "name": "dish name variant 2",
+      "description": "appetizing description 1-2 sentences"
+    }},
+    {{
+      "name": "dish name variant 3", 
+      "description": "appetizing description 1-2 sentences"
+    }}
+  ],
+  "translations": {{
+    "de": {{"name": "...", "description": "..."}},
+    "en": {{"name": "...", "description": "..."}},
+    "ru": {{"name": "...", "description": "..."}},
+    "uk": {{"name": "...", "description": "..."}}
+  }},
+  "calories": 450,
+  "protein": 32,
+  "fat": 18,
+  "carbs": 45,
+  "tags": ["vegan", "halal", "vegetarian", "kids"]
+}}
+
+tags array should only include tags that actually apply to this dish.
+If no ingredients mentioned, omit calories/protein/fat/carbs fields."""
+
+    try:
+        response = get_groq_client().chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1024,
+            temperature=0.8,
+        )
+        import json
+        text = response.choices[0].message.content.strip()
+        text = text.replace("```json", "").replace("```", "").strip()
+        data = json.loads(text)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

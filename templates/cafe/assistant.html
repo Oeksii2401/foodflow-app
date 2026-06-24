@@ -135,3 +135,160 @@ function sendQuick(text) {
 }
 </script>
 {% endblock %}
+<script>
+// Перехватываем ответы с вариантами блюд
+const originalAddMessage = addMessage;
+
+async function tryGenerateDish(text) {
+  const keywords = ['блюдо', 'dish', 'gericht', 'страва', 'рецепт', 'recipe', 'добавить', 'создать', 'придумай', 'generate', 'erstelle', 'опиши'];
+  const hasKeyword = keywords.some(k => text.toLowerCase().includes(k));
+  if (!hasKeyword) return false;
+
+  document.getElementById('quick-actions').style.display = 'none';
+  addMessage('user', text);
+  history.push({role:'user', content:text});
+  addTyping();
+  document.getElementById('send-btn').disabled = true;
+
+  try {
+    const res = await fetch('/cafe/ai/generate-dish', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cafe_id: CAFE_ID, dish_input: text, lang: LANG})
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (!data.variants) return false;
+
+    document.getElementById('typing')?.remove();
+    renderDishVariants(data);
+    history.push({role:'assistant', content:'Вот варианты для блюда. Выберите лучший!'});
+    return true;
+  } catch(e) {
+    return false;
+  } finally {
+    document.getElementById('send-btn').disabled = false;
+  }
+}
+
+function renderDishVariants(data) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-assistant';
+  wrap.style.flexDirection = 'column';
+  wrap.style.alignItems = 'flex-start';
+  wrap.style.gap = '8px';
+  wrap.style.maxWidth = '90%';
+
+  // Макросы если есть
+  let macrosHtml = '';
+  if (data.calories) {
+    macrosHtml = `<div style="display:flex;gap:12px;padding:8px 12px;background:var(--color-background-primary);border-radius:8px;border:0.5px solid var(--color-border-tertiary);font-size:12px;margin-bottom:4px">
+      <span>🔥 ${data.calories} ккал</span>
+      <span>🥩 Б: ${data.protein}г</span>
+      <span>🧈 Ж: ${data.fat}г</span>
+      <span>🌾 У: ${data.carbs}г</span>
+    </div>`;
+  }
+
+  // Теги
+  const tagLabels = {vegan:'🌱 Веган', vegetarian:'🥗 Вегетарианское', halal:'☪️ Халяль', kids:'👶 Детское'};
+  let tagsHtml = '';
+  if (data.tags && data.tags.length) {
+    tagsHtml = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">` +
+      data.tags.map(t => `<span style="padding:2px 8px;border-radius:12px;background:var(--color-background-info);color:var(--color-text-info);font-size:11px">${tagLabels[t]||t}</span>`).join('') +
+      `</div>`;
+  }
+
+  // Варианты
+  let variantsHtml = data.variants.map((v, i) => `
+    <div style="padding:12px;border:0.5px solid var(--color-border-primary);border-radius:10px;background:var(--color-background-secondary);cursor:pointer;transition:border-color .15s"
+         onmouseover="this.style.borderColor='#534ab7'" onmouseout="this.style.borderColor=''"
+         onclick="selectVariant(${JSON.stringify(v).replace(/"/g,'&quot;')}, ${JSON.stringify(data).replace(/"/g,'&quot;')})">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--color-text-secondary)">Вариант ${i+1}</span>
+        ${i===0?'<span style="font-size:11px;padding:2px 8px;background:#eeedfe;color:#534ab7;border-radius:10px">⭐ Рекомендуем</span>':''}
+      </div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:4px">${v.name}</div>
+      <div style="font-size:13px;color:var(--color-text-secondary)">${v.description}</div>
+    </div>
+  `).join('');
+
+  wrap.innerHTML = `<div class="msg-bubble-assistant" style="max-width:100%;width:100%">
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:10px">Выберите лучший вариант для вашего блюда:</div>
+    ${macrosHtml}${tagsHtml}
+    <div style="display:flex;flex-direction:column;gap:8px">${variantsHtml}</div>
+  </div>`;
+
+  document.getElementById('chat-messages').appendChild(wrap);
+  wrap.scrollIntoView({behavior:'smooth', block:'end'});
+}
+
+function selectVariant(variant, data) {
+  const msg = `✅ Выбран вариант: **${variant.name}**\n\n${variant.description}`;
+  addMessage('assistant', msg);
+
+  // Переводы
+  if (data.translations) {
+    const t = data.translations;
+    const transHtml = `<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+      ${Object.entries(t).map(([lang, tr]) => `
+        <div style="padding:8px 12px;border-radius:8px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary)">
+          <span style="font-size:11px;font-weight:500;color:var(--color-text-secondary)">${lang.toUpperCase()}</span>
+          <div style="font-size:13px;font-weight:500">${tr.name}</div>
+          <div style="font-size:12px;color:var(--color-text-secondary)">${tr.description}</div>
+        </div>
+      `).join('')}
+    </div>`;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-assistant';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble-assistant';
+    bubble.style.maxWidth = '90%';
+    bubble.innerHTML = `<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:8px">Переводы на 4 языка:</div>${transHtml}`;
+    wrap.appendChild(bubble);
+    document.getElementById('chat-messages').appendChild(wrap);
+    wrap.scrollIntoView({behavior:'smooth', block:'end'});
+  }
+}
+
+// Переопределяем sendMessage чтобы перехватывать генерацию блюд
+const _origSendMessage = sendMessage;
+window.sendMessage = async function() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const isDish = await tryGenerateDish(text);
+  if (!isDish) {
+    input.value = text; // восстанавливаем если не перехватили
+    // вызываем оригинальный через fetch напрямую
+    input.value = '';
+    document.getElementById('quick-actions').style.display = 'none';
+    addMessage('user', text);
+    history.push({role:'user', content:text});
+    addTyping();
+    document.getElementById('send-btn').disabled = true;
+    try {
+      const res = await fetch('/cafe/ai/chat', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({cafe_id:CAFE_ID, message:text, history:history.slice(-8), lang:LANG})
+      });
+      const data = await res.json();
+      document.getElementById('typing')?.remove();
+      const reply = data.message || ERROR_MSG;
+      addMessage('assistant', reply);
+      history.push({role:'assistant', content:reply});
+    } catch(e) {
+      document.getElementById('typing')?.remove();
+      addMessage('assistant', ERROR_MSG);
+    }
+    document.getElementById('send-btn').disabled = false;
+    document.getElementById('chat-input').focus();
+  } else {
+    document.getElementById('send-btn').disabled = false;
+    document.getElementById('chat-input').focus();
+  }
+}
+</script>
