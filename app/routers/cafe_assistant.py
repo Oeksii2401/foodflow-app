@@ -294,3 +294,75 @@ async def analyze_photo(req: PhotoAnalyzeRequest, db: Session = Depends(get_db))
         return {"message": response.choices[0].message.content}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class MenuSectionRequest(BaseModel):
+    cafe_id: int
+    lang: Optional[str] = "ru"
+
+@router.post("/generate-menu-sections")
+async def generate_menu_sections(req: MenuSectionRequest, db: Session = Depends(get_db)):
+    dishes = db.query(Dish).filter(Dish.cafe_id == req.cafe_id, Dish.is_available == True).all()
+    if not dishes:
+        return {"sections": [], "message": "Меню пустое"}
+
+    dishes_text = "\n".join([
+        f"- {d.name} ({d.price}€): {d.description or ''} | "
+        f"калории:{getattr(d,'calories','?')} | "
+        f"веган:{getattr(d,'is_vegan',False)} | "
+        f"вегетарианское:{getattr(d,'is_vegetarian',False)} | "
+        f"халяль:{getattr(d,'is_halal',False)} | "
+        f"детское:{getattr(d,'is_kids',False)} | "
+        f"аллергены:{getattr(d,'allergens','нет')}"
+        for d in dishes[:30]
+    ])
+
+    prompt = f"""You are a restaurant menu expert specializing in the German market 2026.
+
+Analyze these dishes and organize them into SMART menu sections based on 2026 trends:
+{dishes_text}
+
+Create 4-6 menu sections that make sense for this specific cafe's dishes.
+Choose sections from these trend-based options (only include sections that have relevant dishes):
+- "Protein Power" — high-protein dishes (for fitness/health conscious)
+- "Gut Friendly" — fiber-rich, fermented, light dishes
+- "Plant Forward" — vegan/vegetarian
+- "Halal Certified" — halal dishes
+- "Kids Menu" — children's dishes
+- "Comfort Classics" — nostalgic, familiar dishes
+- "Seasonal Specials" — fresh, seasonal ingredients
+- "Quick & Light" — under 500 kcal
+- "Sharing Plates" — good for groups
+- "Chef's Signatures" — premium/special dishes
+- "Allergen Free" — no common allergens
+
+Respond ONLY with valid JSON:
+{{
+  "sections": [
+    {{
+      "name_ru": "Название раздела по-русски",
+      "name_de": "Name auf Deutsch",
+      "name_en": "Name in English",
+      "name_uk": "Назва українською",
+      "icon": "🥗",
+      "description_ru": "Краткое описание раздела (1 предложение)",
+      "trend_insight": "Почему этот раздел актуален в Германии 2026 (1 предложение)",
+      "dish_names": ["название блюда 1", "название блюда 2"]
+    }}
+  ]
+}}"""
+
+    try:
+        response = get_groq_client().chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=2048,
+            temperature=0.7,
+        )
+        import json
+        text = response.choices[0].message.content.strip()
+        text = text.replace("```json","").replace("```","").strip()
+        data = json.loads(text)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

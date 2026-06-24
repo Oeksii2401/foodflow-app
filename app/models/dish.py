@@ -24,6 +24,8 @@ class Dish(Base):
     is_vegan = Column(Boolean, default=False)        # веган
     is_vegetarian = Column(Boolean, default=False)   # вегетарианец
     allergens = Column(String, nullable=True)        # "глютен, лактоза, орехи"
+    is_halal = Column(Boolean, default=False)        # халяль
+    is_kids = Column(Boolean, default=False)         # детское меню
 
     cafe = relationship("Cafe", back_populates="dishes")
     category = relationship("MenuCategory", back_populates="dishes")

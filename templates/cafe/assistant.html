@@ -32,6 +32,7 @@
     <button onclick="sendQuick('{{ t.quick_calories }}')" class="quick-btn">{{ t.btn_calories }}</button>
     <button onclick="sendQuick('{{ t.quick_delivery }}')" class="quick-btn">{{ t.btn_delivery }}</button>
     <button onclick="sendQuick('{{ t.quick_photo }}')" class="quick-btn">{{ t.btn_photo }}</button>
+    <button onclick="generateMenuSections()" class="quick-btn">✨ Умные разделы меню</button>
     <button onclick="sendQuick('{{ t.quick_pricing }}')" class="quick-btn">{{ t.btn_pricing }}</button>
   </div>
 
@@ -235,9 +236,60 @@ document.getElementById('photo-input').addEventListener('change', function() {
   reader.readAsDataURL(file);
 });
 
-document.getElementById('send-btn').addEventListener('click', sendMessage);
+document.getElementById("send-btn").addEventListener("click", sendMessage);
 document.getElementById('chat-input').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
+
+async function generateMenuSections() {
+  document.getElementById("quick-actions").style.display = "none";
+  addMessage("user", "✨ Сформируй умные разделы меню на основе трендов 2026");
+  addTyping();
+  try {
+    const res = await fetch("/cafe/ai/generate-menu-sections", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({cafe_id:CAFE_ID, lang:LANG})
+    });
+    const data = await res.json();
+    document.getElementById("typing")?.remove();
+    if (!data.sections || !data.sections.length) {
+      addMessage("assistant", "Меню пустое — добавьте блюда.");
+      return;
+    }
+    renderMenuSections(data.sections);
+  } catch(e) {
+    document.getElementById("typing")?.remove();
+    addMessage("assistant", ERROR_MSG);
+  }
+}
+
+function renderMenuSections(sections) {
+  const wrap = document.createElement("div");
+  wrap.className = "msg-assistant";
+  const bubble = document.createElement("div");
+  bubble.className = "msg-bubble-assistant";
+  bubble.style.maxWidth = "92%";
+  const nameKey = "name_" + LANG;
+  const descKey = "description_" + LANG;
+  bubble.innerHTML = '<div style="font-size:13px;font-weight:500;margin-bottom:12px">📊 Умные разделы меню (тренды Германии 2026):</div>' +
+    sections.map(s => `
+      <div style="padding:12px;border:0.5px solid var(--color-border-primary);border-radius:10px;background:var(--color-background-secondary);margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:20px">${s.icon}</span>
+          <div>
+            <div style="font-size:14px;font-weight:500">${s[nameKey]||s.name_ru}</div>
+            <div style="font-size:12px;color:var(--color-text-secondary)">${s[descKey]||s.description_ru}</div>
+          </div>
+        </div>
+        <div style="font-size:12px;padding:6px 10px;background:var(--color-background-primary);border-radius:6px;color:var(--color-text-secondary);margin-bottom:6px">💡 ${s.trend_insight}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${(s.dish_names||[]).map(d=>`<span style="padding:2px 8px;border-radius:10px;background:var(--color-background-info);color:var(--color-text-info);font-size:11px">${d}</span>`).join("")}
+        </div>
+      </div>`).join("");
+  wrap.appendChild(bubble);
+  document.getElementById("chat-messages").appendChild(wrap);
+  wrap.scrollIntoView({behavior:"smooth", block:"end"});
+}
+
 </script>
 {% endblock %}
