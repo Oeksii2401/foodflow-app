@@ -30,7 +30,7 @@
     <button onclick="sendQuick('{{ t.quick_stripe }}')" class="quick-btn">{{ t.btn_stripe }}</button>
     <button onclick="sendQuick('{{ t.quick_dish }}')" class="quick-btn">{{ t.btn_dish }}</button>
     <button onclick="sendQuick('{{ t.quick_calories }}')" class="quick-btn">{{ t.btn_calories }}</button>
-    <button onclick="sendQuick('{{ t.quick_delivery }}')" class="quick-btn">{{ t.btn_delivery }}</button>
+    <button onclick="suggestDeliveryZones()" class="quick-btn">{{ t.btn_delivery }}</button>
     <button onclick="sendQuick('{{ t.quick_photo }}')" class="quick-btn">{{ t.btn_photo }}</button>
     <button onclick="generateMenuSections()" class="quick-btn">✨ Умные разделы меню</button>
     <button onclick="sendQuick('{{ t.quick_pricing }}')" class="quick-btn">{{ t.btn_pricing }}</button>
@@ -290,6 +290,29 @@ function renderMenuSections(sections) {
   document.getElementById("chat-messages").appendChild(wrap);
   wrap.scrollIntoView({behavior:"smooth", block:"end"});
 }
+
+async function suggestDeliveryZones() {
+  addMessage("user", "🗺️ Предложи оптимальные зоны доставки для моего кафе");
+  addTyping();
+  try {
+    const res = await fetch("/cafe/ai/suggest-delivery-zones", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({cafe_id:CAFE_ID, lang:LANG})
+    });
+    const data = await res.json();
+    document.getElementById("typing")?.remove();
+    if (data.message) {
+      const formatted = data.message
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+      addMessage("assistant", formatted);
+    }
+  } catch(e) {
+    document.getElementById("typing")?.remove();
+    addMessage("assistant", ERROR_MSG);
+  }
+}
+
 
 </script>
 {% endblock %}

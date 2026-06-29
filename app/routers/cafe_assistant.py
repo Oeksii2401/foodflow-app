@@ -366,3 +366,65 @@ Respond ONLY with valid JSON:
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class DeliveryZoneRequest(BaseModel):
+    cafe_id: int
+    lang: Optional[str] = "ru"
+
+@router.post("/suggest-delivery-zones")
+async def suggest_delivery_zones(req: DeliveryZoneRequest, db: Session = Depends(get_db)):
+    cafe = db.query(Cafe).filter(Cafe.id == req.cafe_id).first()
+    if not cafe:
+        raise HTTPException(status_code=404, detail="Cafe not found")
+    
+    zones = db.query(DeliveryZone).filter(DeliveryZone.cafe_id == req.cafe_id).all()
+    zones_text = "\n".join([
+        f"  - {z.name}: {z.delivery_price}€, min order {z.min_order}€, time {z.delivery_time_min}min"
+        for z in zones
+    ]) or "  no zones configured yet"
+
+    cafe_address = cafe.address or "Germany (city unknown)"
+
+    lang_instruction = {
+        "ru": "Отвечай на русском языке.",
+        "de": "Antworte auf Deutsch.",
+        "en": "Reply in English.",
+        "uk": "Відповідай українською мовою.",
+    }.get(req.lang, "Reply in English.")
+
+    prompt = f"""You are a delivery logistics expert for cafes and restaurants in Germany.
+
+Cafe name: {cafe.name}
+Cafe address: {cafe_address}
+Current delivery zones:
+{zones_text}
+
+Suggest an optimal delivery zone structure with 2-4 zones. For each zone specify:
+- Zone name (e.g. "Nahzone", "Fernzone")
+- Radius in km
+- Recommended delivery price (€)
+- Minimum order amount (€)
+- Estimated delivery time (minutes)
+- Brief reasoning
+
+German market context:
+- Average courier cost: 5-8€/delivery
+- Customers expect delivery in 30-45 min for close zones
+- Free delivery threshold: 15-25€ for nearby zones
+- Beyond 5km, delivery costs should increase noticeably
+
+{lang_instruction}
+
+Format with zones separated clearly. End with 1-2 general tips about delivery strategy for German cafes."""
+
+    try:
+        response = get_groq_client().chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1024,
+            temperature=0.7,
+        )
+        return {"message": response.choices[0].message.content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
