@@ -11,18 +11,21 @@
 <body class="bg-gray-50 min-h-screen">
 
     <!-- Шапка -->
-    <header class="bg-white shadow-sm sticky top-0 z-50">
+    <header class="sticky top-0 z-50" style="background:#2a2a2a;border-bottom:0.5px solid rgba(255,255,255,0.1)">
         <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-            <h1 class="text-xl font-bold text-blue-600">🍕 FoodFlow</h1>
+            <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:32px;height:32px;background:#f5c518;border-radius:50%;display:flex;align-items:center;justify-content:center">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </div>
+      <div style="line-height:1">
+        <div style="font-size:15px;font-weight:600;color:#fff;line-height:1">Food</div>
+        <div style="font-size:10px;color:#f5c518;letter-spacing:0.15em;text-transform:uppercase">Flow</div>
+      </div>
+    </div>
             <div class="flex items-center gap-3">
-                <!-- Выбор языка -->
-                <select onchange="switchLang(this.value)"
-                        class="text-sm border rounded px-2 py-1">
-                    <option value="de" {% if lang == 'de' %}selected{% endif %}>🇩🇪 DE</option>
-                    <option value="en" {% if lang == 'en' %}selected{% endif %}>🇬🇧 EN</option>
-                    <option value="ru" {% if lang == 'ru' %}selected{% endif %}>🇷🇺 RU</option>
-                    <option value="uk" {% if lang == 'uk' %}selected{% endif %}>🇺🇦 UK</option>
-                </select>
+                
                 <!-- Корзина -->
                 <a href="/cart" class="relative">
                     <span class="text-2xl">🛒</span>

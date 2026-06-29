@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}FoodFlow — Еда рядом{% endblock %}
+{% block content %}
+<style>
+body{background:#0d0d1a !important}
+.hero{padding:32px 24px 36px;text-align:center;position:relative;overflow:hidden;margin-bottom:20px}
+.blob1{position:absolute;width:220px;height:220px;background:#ff6b35;border-radius:50%;filter:blur(70px);opacity:0.18;top:-60px;left:-40px;pointer-events:none}
+.blob2{position:absolute;width:180px;height:180px;background:#534ab7;border-radius:50%;filter:blur(70px);opacity:0.22;bottom:-40px;right:-30px;pointer-events:none}
+.logo-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:24px}
+.logo-icon{width:36px;height:36px;background:#ff6b35;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.logo-text{font-size:22px;font-weight:500;color:#fff}
+.hero h1{font-size:28px;font-weight:500;color:#fff;line-height:1.25;margin-bottom:10px}
+.hero h1 em{color:#f5c518;font-style:normal}
+.hero p{font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:24px;line-height:1.6}
+.lang-row{display:flex;gap:6px;justify-content:center;margin-bottom:28px}
+.lang-btn{padding:5px 14px;border-radius:20px;font-size:11px;font-weight:500;border:0.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);cursor:pointer;text-decoration:none}
+.lang-btn.active{background:#f5c518;border-color:#f5c518;color:#1c1c1e}
+.order-btn{display:block;width:100%;padding:16px;border-radius:12px;background:#f5c518;color:#1c1c1e;font-size:16px;font-weight:500;text-align:center;text-decoration:none;margin-bottom:10px;box-shadow:0 4px 20px rgba(255,107,53,0.4);transition:transform 0.15s,box-shadow 0.15s}.order-btn:active{transform:scale(0.98);box-shadow:0 2px 10px rgba(255,107,53,0.3)}
+.owner-btn-hero{display:block;width:100%;padding:13px;border-radius:12px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);font-size:14px;font-weight:500;text-align:center;text-decoration:none;box-shadow:0 2px 12px rgba(0,0,0,0.3);transition:transform 0.15s,background 0.15s}.owner-btn-hero:active{transform:scale(0.98);background:rgba(255,255,255,0.12)}
+.section-label{font-size:11px;font-weight:500;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+.section-title{font-size:16px;font-weight:500;color:#fff;margin-bottom:14px}
+.food-types{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:28px}.ft-red{background:rgba(255,100,100,0.15)}.ft-teal{background:rgba(0,180,180,0.15)}
+.food-type{background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px;display:flex;align-items:center;gap:10px;text-decoration:none}
+.food-type-icon{font-size:22px;width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ft-orange{background:#faeeda}.ft-green{background:#eaf3de}.ft-blue{background:#e6f1fb}.ft-purple{background:#eeedfe}
+.food-type-info h4{font-size:13px;font-weight:500;color:#fff;margin-bottom:2px}
+.food-type-info p{font-size:11px;color:rgba(255,255,255,0.45)}
+.join-block{background:#363636;border:0.5px solid rgba(245,197,24,0.25);border-radius:16px;padding:24px;margin-bottom:28px}
+.join-block h2{font-size:18px;font-weight:500;color:#fff;margin-bottom:8px}
+.join-block p{font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:20px;line-height:1.6}
+.join-features{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.join-feature{display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.8)}
+.join-check{width:20px;height:20px;border-radius:50%;background:rgba(245,197,24,0.2);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;color:#f5c518}
+.join-cta{display:block;width:100%;padding:13px;border-radius:10px;background:#f5c518;color:#1c1c1e;font-size:14px;font-weight:600;text-align:center;text-decoration:none}
+.flow-steps{background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.1);border-radius:12px;overflow:hidden;margin-bottom:8px}
+.flow-step{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:0.5px solid rgba(255,255,255,0.07)}
+.flow-step:last-child{border-bottom:none}
+.flow-num{width:24px;height:24px;border-radius:50%;background:#f5c518;color:#1c1c1e;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.flow-text h4{font-size:13px;font-weight:500;color:#fff;margin-bottom:2px}
+.flow-text p{font-size:11px;color:rgba(255,255,255,0.45)}
+</style>
+
+<div style="max-width:390px;margin:0 auto;padding:0 16px 40px">
+
+  <!-- Hero -->
+  <div class="hero" style="margin:0 -16px 20px">
+    <div class="blob1"></div>
+    <div class="blob2"></div>
+    <div class="logo-row">
+      <div style="width:40px;height:40px;background:#f5c518;border-radius:50%;display:flex;align-items:center;justify-content:center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </div>
+      <div style="line-height:1;text-align:left">
+        <div style="font-size:18px;font-weight:600;color:#fff;line-height:1">Food</div>
+        <div style="font-size:11px;color:#f5c518;letter-spacing:0.15em;text-transform:uppercase">Flow</div>
+      </div>
+    </div>
+    <h1>Еда рядом.<br><em>Быстро и просто.</em></h1>
+    <p>Заказывайте из кафе вашего района на своём языке</p>
+    <div class="lang-row">
+      <a href="/?lang=de" class="lang-btn {% if lang == 'de' %}active{% endif %}">DE</a>
+      <a href="/?lang=en" class="lang-btn {% if lang == 'en' %}active{% endif %}">EN</a>
+      <a href="/?lang=ru" class="lang-btn {% if lang == 'ru' %}active{% endif %}">RU</a>
+      <a href="/?lang=uk" class="lang-btn {% if lang == 'uk' %}active{% endif %}">UK</a>
+    </div>
+    <a href="/menu/1" class="order-btn"><span style="display:inline-flex;align-items:center;gap:10px">
+      <span style="width:26px;height:26px;background:#f5c518;border-radius:50%;border:2px solid #1c1c1e;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </span>
+      Заказать еду
+    </span></a>
+    <a href="/login" class="owner-btn-hero"><span style="display:inline-flex;align-items:center;gap:10px">
+      <span style="width:26px;height:26px;background:#f5c518;border-radius:50%;border:2px solid #1c1c1e;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </span>
+      Войти как владелец кафе
+    </span></a>
+  </div>
+
+  <!-- Тип еды -->
+  <div style="margin-bottom:28px">
+    <div class="section-label">Выберите категорию</div>
+    <div class="section-title">Что хотите заказать?</div>
+    <div class="food-types">
+      <a href="/menu/1?filter=hot" class="food-type">
+        <div class="food-type-icon ft-orange">🥘</div>
+        <div class="food-type-info"><h4>Горячее</h4><p>Супы, горячие блюда</p></div>
+      </a>
+      <a href="/menu/1?filter=vegan" class="food-type">
+        <div class="food-type-icon ft-green">🌿</div>
+        <div class="food-type-info"><h4>Веганское</h4><p>Растительная еда</p></div>
+      </a>
+      <a href="/menu/1?filter=halal" class="food-type">
+        <div class="food-type-icon ft-blue">🕌</div>
+        <div class="food-type-info"><h4>Халяль</h4><p>Сертифицированные кафе</p></div>
+      </a>
+      <a href="/menu/1?filter=kids" class="food-type">
+        <div class="food-type-icon ft-purple">🧒</div>
+        <div class="food-type-info"><h4>Детское меню</h4><p>Для самых маленьких</p></div>
+      </a>
+      <a href="/menu/1?filter=sushi" class="food-type">
+        <div class="food-type-icon ft-red">🍣</div>
+        <div class="food-type-info"><h4>Суши</h4><p>Роллы и сеты</p></div>
+      </a>
+      <a href="/menu/1?filter=drinks" class="food-type">
+        <div class="food-type-icon ft-teal">🥤</div>
+        <div class="food-type-info"><h4>Напитки</h4><p>Кофе, соки, чай</p></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Как работает заказ -->
+  <div style="margin-bottom:28px">
+    <div class="section-label">Процесс</div>
+    <div class="section-title">Как работает заказ</div>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-text"><h4>Выбираете тип еды</h4><p>Горячее, веган, халяль, детское...</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-text"><h4>Система подбирает кафе</h4><p>Одно или несколько — в зависимости от наличия</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div class="flow-text"><h4>Выбираете блюда</h4><p>Из общего меню — система знает откуда везти</p></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">4</div>
+        <div class="flow-text"><h4>Платите и ждёте</h4><p>Оплата онлайн, доставка прямо к вам</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Блок для владельцев -->
+  <div class="join-block">
+    <h2>🏪 Вы владелец кафе?</h2>
+    <p>Подключите своё кафе к FoodFlow и начните получать заказы уже сегодня. </p>
+    <div class="join-features">
+      <div class="join-feature"><div class="join-check">✓</div>Только 10% комиссии с каждого заказа</div>
+      <div class="join-feature"><div class="join-check">✓</div>Деньги сразу на ваш счёт через Stripe</div>
+      <div class="join-feature"><div class="join-check">✓</div>AI-ассистент помогает создать меню</div>
+      <div class="join-feature"><div class="join-check">✓</div>Меню на 4 языках автоматически</div>
+      <div class="join-feature"><div class="join-check">✓</div>Уведомления на кухню в Telegram</div>
+    </div>
+    <a href="/login" class="join-cta">Подключить кафе бесплатно →</a>
+  </div>
+
+</div>
+{% endblock %}
